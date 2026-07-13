@@ -1,0 +1,62 @@
+/* Container: Light background */
+.register-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f0f0f0; /* Light gray background */
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Logo & Header */
+.small-logo { width: 50px; height: auto; margin-bottom: 10px; }
+
+.logo-header { text-align: center; margin-bottom: 20px; }
+
+/* Box: White background with thin border */
+.register-box {
+  background: white;
+  width: 400px;
+  border: 1px solid #dcdcdc;
+  padding: 40px;
+}
+
+.red-line { height: 2px; background: #e04a4a; margin-bottom: 25px; }
+
+/* Labels: Small red text */
+label { 
+  font-size: 0.6rem; 
+  color: #e04a4a; 
+  display: block; 
+  margin-top: 20px; 
+  font-weight: bold; 
+  letter-spacing: 1px;
+  text-align: left;
+}
+
+/* Inputs: Minimalist style */
+input { 
+  width: 100%; 
+  border: none; 
+  border-bottom: 1px solid #ccc; 
+  padding: 8px 0; 
+  background: #f7f7f7; /* Very light gray background for input box */
+  margin-top: 5px;
+}
+
+/* Button: Blue full width */
+.register-btn {
+  width: 100%;
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px;
+  margin-top: 30px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Footer Link */
+.login-link { text-align: center; font-size: 0.7rem; margin-top: 20px; }
+.login-link a { text-decoration: none; color: #333; }

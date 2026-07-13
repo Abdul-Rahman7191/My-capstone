@@ -1,0 +1,70 @@
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f4f4f7;
+  font-family: sans-serif;
+}
+
+.logo-placeholder img {
+  width: 100px; /* Logo size adjusted to match your reference */
+  height: auto;
+  display: block;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 0;
+  color: #000;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  color: #555;
+  margin-top: 30px; /* Space between title and subtitle */
+  margin-bottom: 30px;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  height: 1px;
+  background-color: #e04a4a;
+  width: 50px;
+  margin: 0 15px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  padding: 12px 40px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  transition: 0.3s;
+}
+
+.btn-signup {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  color: #000;
+}
+
+.btn-login {
+  background-color: #007bff;
+  color: #ffffff;
+}
+
+button:hover {
+  opacity: 0.8;
+}
