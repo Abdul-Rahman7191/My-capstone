@@ -26,14 +26,22 @@
 
 /* Labels: Small red text */
 label { 
-  font-size: 0.6rem; 
-  color: #e04a4a; 
-  display: block; 
-  margin-top: 20px; 
-  font-weight: bold; 
-  letter-spacing: 1px;
+ /* Core styles (matches Login.css) */
+  font-size: 0.85rem;
+  color: #e04a4a;
+  display: block;
+  margin-top: 15px;
+  font-weight: bold;
+
+  /* Your specific requirement */
   text-align: left;
+
+  /* THE FIX: Use the exact same font-family as the login page and !important
+     to override any other competing rules. */
+  font-family: monospace !important; /* Try this first (most common for login pages) */
 }
+
+
 
 /* Inputs: Minimalist style */
 input { 
