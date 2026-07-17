@@ -5,7 +5,7 @@ const Landing = () => {
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-white font-sans">
       <div className="mb-5">
-        <img src="/logo.jpg" alt="Ichiban Logo" className="w-[100px] h-auto block" />
+        <img src="/logo.jpeg" alt="Ichiban Logo" className="w-[180px] h-auto block" />
       </div>
       
       <h1 className="text-[3rem] font-extrabold m-0 text-black">

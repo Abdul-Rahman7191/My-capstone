@@ -7,7 +7,7 @@ const Register = () => {
       
       {/* Logo Header - Tightened margins */}
       <div className="text-center mb-3">
-        <img src="/logo.jpg" alt="Ichiban Logo" className="w-[50px] h-auto mx-auto mb-1" />
+        <img src="/logo.jpeg" alt="Ichiban Logo" className="w-[150px] h-auto mx-auto mb-1" />
         <h2 className="text-[#333333] font-bold text-xl">repAIr by Ichiban</h2>
         <p className="text-[#333333] font-semibold text-[14px] tracking-[1px] mt-0.5">ACCOUNT CREATION</p>
       </div>

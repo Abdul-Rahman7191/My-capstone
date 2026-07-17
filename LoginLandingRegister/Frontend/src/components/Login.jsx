@@ -8,7 +8,7 @@ const Login = () => {
       {/* Logo Header */}
       <div className="text-center mb-5">
         {/* Logo stays small and centered */}
-        <img src="/logo.jpg" alt="Ichiban Logo" className="w-[60px] h-auto block mx-auto mb-2.5" />
+        <img src="/logo.jpeg" alt="Ichiban Logo" className="w-[180px] h-auto block mx-auto mb-2.5" />
         <h2 className="text-[#333333] font-bold text-2xl">repAIr by Ichiban</h2>
         <p className="text-[#333333] font-semibold text-[18px] tracking-[1px] mt-1">AUTHENTICATION</p>
       </div>
