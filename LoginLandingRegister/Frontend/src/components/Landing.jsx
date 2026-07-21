@@ -12,12 +12,12 @@ const Landing = () => {
         repAIr by Ichiban
       </h1>
       
-      {/* Divider with horizontal lines using flex layout */}
-      <div className="flex items-center text-[0.8rem] tracking-[2px] color-[#555] mt-[30px] mb-[30px]">
-        <div className="h-[1px] bg-[#e04a4a] w-[50px] mr-[15px]"></div>
-        <span>AI-POWERED PREDICTIVE MAINTENANCE</span>
-        <div className="h-[1px] bg-[#e04a4a] w-[50px] ml-[15px]"></div>
-      </div>
+    {/* Divider with horizontal lines using flex layout */}
+<div className="flex items-center text-[0.8rem] tracking-[2px] text-slate-900 font-semibold mt-[30px] mb-[30px]">
+  <div className="h-[1px] bg-[#e04a4a] w-[50px] mr-[15px]"></div>
+  <span>AI-POWERED PREDICTIVE MAINTENANCE</span>
+  <div className="h-[1px] bg-[#e04a4a] w-[50px] ml-[15px]"></div>
+</div>
       
       <div className="flex gap-2.5">
         <Link to="/register">
