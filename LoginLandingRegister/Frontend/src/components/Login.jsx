@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -12,6 +13,15 @@ const Login = () => {
   const DUMMY_EMAIL = 'xyz@gmail.com';
   const DUMMY_PASSWORD = '1234';
 
+  // 1. Remember Me: Load saved email on initial render
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+      setFormData((prev) => ({ ...prev, email: savedEmail }));
+      setRememberMe(true);
+    }
+  }, []);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError('');
@@ -20,24 +30,31 @@ const Login = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // 1. Check for empty fields
+    // Check for empty fields
     if (!formData.email.trim() || !formData.password.trim()) {
       setError('Please fill in both email and password fields.');
       return;
     }
 
-    // 2. Check credentials
+    // Check credentials
     if (formData.email !== DUMMY_EMAIL || formData.password !== DUMMY_PASSWORD) {
       setError('Invalid email or password. Please try again.');
       return;
     }
 
-    // 3. Trigger loading animation & redirect
+    // 2. Remember Me: Save or clear local storage preference
+    if (rememberMe) {
+      localStorage.setItem('rememberedEmail', formData.email.trim());
+    } else {
+      localStorage.removeItem('rememberedEmail');
+    }
+
+    // Trigger loading animation & redirect
     setError('');
     setIsLoading(true);
 
     setTimeout(() => {
-      navigate('/dashboard'); 
+      navigate('/dashboard');
     }, 1500);
   };
 
@@ -112,6 +129,27 @@ const Login = () => {
                 )}
               </button>
             </div>
+          </div>
+
+          {/* Remember Me & Forgot Password Row */}
+          <div className="flex items-center justify-between mt-3 text-[0.7rem]">
+            <label className="flex items-center gap-1.5 text-[#333] cursor-pointer select-none">
+              <input 
+                type="checkbox"
+                checked={rememberMe}
+                disabled={isLoading}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="accent-[#e04a4a] cursor-pointer"
+              />
+              REMEMBER ME
+            </label>
+
+            <Link 
+              to="/forgot-password" 
+              className="text-[#e04a4a] font-bold no-underline hover:underline"
+            >
+              FORGOT PASSWORD?
+            </Link>
           </div>
 
           {/* Error Notification Banner */}
