@@ -9,11 +9,10 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  // Dummy Credentials
-  const DUMMY_EMAIL = 'xyz@gmail.com';
-  const DUMMY_PASSWORD = '1234';
+  // Point this to wherever your FastAPI backend is running
+  const API_URL = 'http://localhost:8000';
 
-  // 1. Remember Me: Load saved email on initial render
+  // Remember Me: Load saved email on initial render
   useEffect(() => {
     const savedEmail = localStorage.getItem('rememberedEmail');
     if (savedEmail) {
@@ -27,35 +26,46 @@ const Login = () => {
     if (error) setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check for empty fields
     if (!formData.email.trim() || !formData.password.trim()) {
       setError('Please fill in both email and password fields.');
       return;
     }
 
-    // Check credentials
-    if (formData.email !== DUMMY_EMAIL || formData.password !== DUMMY_PASSWORD) {
-      setError('Invalid email or password. Please try again.');
-      return;
-    }
-
-    // 2. Remember Me: Save or clear local storage preference
-    if (rememberMe) {
-      localStorage.setItem('rememberedEmail', formData.email.trim());
-    } else {
-      localStorage.removeItem('rememberedEmail');
-    }
-
-    // Trigger loading animation & redirect
     setError('');
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.detail || 'Invalid email or password. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', formData.email.trim());
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+
       navigate('/dashboard');
-    }, 1500);
+    } catch (err) {
+      setError('Could not connect to the server. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   return (
