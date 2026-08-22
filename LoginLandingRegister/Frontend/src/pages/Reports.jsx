@@ -22,7 +22,6 @@ const severityStyles = {
   INFO: "bg-gray-100 text-gray-500",
 };
 
-// Icons keyed by KPI label, since the backend can't send a React component
 const iconByLabel = {
   "TOTAL EVENTS (30D)": ClipboardList,
   "CRITICAL FAILURES": AlertTriangle,
@@ -61,6 +60,7 @@ export default function ReportsPage({ userRole = "manager", currentUser }) {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   const fetchReportsData = useCallback(async () => {
     try {
@@ -121,7 +121,6 @@ export default function ReportsPage({ userRole = "manager", currentUser }) {
     fetchReportsData();
   }, [fetchReportsData]);
 
-  // Reset to page 1 whenever filters change
   useEffect(() => {
     setPage(1);
   }, [severity, range]);
@@ -148,18 +147,29 @@ export default function ReportsPage({ userRole = "manager", currentUser }) {
     }
   }
 
-  function exportPDF() {
-    // No backend PDF endpoint yet — client-side placeholder
-    const content = history
-      .map((r) => `${r.date} ${r.time} | ${r.equipmentId} | ${r.event} | ${r.severity} | ${r.technician}`)
-      .join("\n");
-    const blob = new Blob([`Maintenance History Report\n\n${content}`], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "maintenance-history.txt";
-    a.click();
-    URL.revokeObjectURL(url);
+  async function exportPDF() {
+    try {
+      setExportingPDF(true);
+      const response = await axios.get(`${API_BASE}/api/maintenance-events/export.pdf`, {
+        params: {
+          role: userRole,
+          user_id: currentUser?.id,
+          range,
+          severity: severity === "All Severities" ? undefined : severity,
+        },
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(response.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "maintenance-history.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF export failed:", err);
+    } finally {
+      setExportingPDF(false);
+    }
   }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -180,9 +190,13 @@ export default function ReportsPage({ userRole = "manager", currentUser }) {
               <Download size={15} strokeWidth={2.2} />
               Export CSV
             </button>
-            <button onClick={exportPDF} className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700">
+            <button
+              onClick={exportPDF}
+              disabled={exportingPDF}
+              className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:opacity-60"
+            >
               <FileText size={15} strokeWidth={2.2} />
-              Generate PDF
+              {exportingPDF ? "Generating..." : "Generate PDF"}
             </button>
           </div>
         )}
@@ -194,14 +208,12 @@ export default function ReportsPage({ userRole = "manager", currentUser }) {
         </div>
       )}
 
-      {/* KPI cards */}
       <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
         {kpis.map((k) => (
           <KpiCard key={k.label} {...k} />
         ))}
       </div>
 
-      {/* Maintenance history table */}
       <div className="mt-5 rounded-2xl border border-[#eceff4] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-[17px] font-bold text-gray-900">
@@ -281,7 +293,6 @@ export default function ReportsPage({ userRole = "manager", currentUser }) {
           </table>
         </div>
 
-        {/* Pagination */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-1">
           <p className="text-xs text-gray-400">
             Showing {total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} to{" "}

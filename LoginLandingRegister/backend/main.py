@@ -12,6 +12,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 import bcrypt
 
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+)
+
 from database import User, Equipment, MaintenanceEvent, SeverityEnum, init_db, get_db
 
 
@@ -33,7 +41,7 @@ app.add_middleware(
 
 
 # ---------------------------------------------------------------------------
-# Auth models & routes (unchanged from your original main.py)
+# Auth models & routes
 # ---------------------------------------------------------------------------
 
 class RegisterRequest(BaseModel):
@@ -111,7 +119,7 @@ def root():
 
 
 # ---------------------------------------------------------------------------
-# Reports models & routes (merged in from Reports.py)
+# Reports models & routes
 # ---------------------------------------------------------------------------
 
 class KpiCard(BaseModel):
@@ -290,4 +298,129 @@ def export_events_csv(
         buffer,
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=maintenance-history.csv"},
+    )
+
+
+# ---------------------------------------------------------------------------
+# PDF export (reportlab)
+# ---------------------------------------------------------------------------
+
+SEVERITY_COLORS = {
+    SeverityEnum.CRITICAL: colors.HexColor("#c0392b"),
+    SeverityEnum.WARNING: colors.HexColor("#d68910"),
+    SeverityEnum.INFO: colors.HexColor("#2874a6"),
+}
+
+
+@app.get("/api/maintenance-events/export.pdf")
+def export_events_pdf(
+    role: str = Query(...),
+    user_id: Optional[int] = Query(None),
+    severity: Optional[SeverityEnum] = Query(None),
+    range: str = Query("Last 30 Days"),
+    db: Session = Depends(get_db),
+):
+    if role != "manager":
+        raise HTTPException(403, "Export is only available to managers")
+
+    q = _base_query(db, role, user_id, severity, range)
+    events = q.order_by(MaintenanceEvent.occurred_at.desc()).all()
+
+    total_events = len(events)
+    critical_count = sum(1 for e in events if e.severity == SeverityEnum.CRITICAL)
+    generated_at = datetime.utcnow().strftime("%b %d, %Y %H:%M:%S UTC")
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(A4),
+        leftMargin=1.5 * cm,
+        rightMargin=1.5 * cm,
+        topMargin=1.5 * cm,
+        bottomMargin=1.5 * cm,
+        title="Maintenance History Report",
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle("TitleStyle", parent=styles["Heading1"], fontSize=18, spaceAfter=2)
+    subtitle_style = ParagraphStyle("SubtitleStyle", parent=styles["Normal"], fontSize=9,
+                                     textColor=colors.HexColor("#666666"), spaceAfter=14)
+    kpi_label_style = ParagraphStyle("KpiLabel", parent=styles["Normal"], fontSize=8,
+                                      textColor=colors.HexColor("#888888"))
+    kpi_value_style = ParagraphStyle("KpiValue", parent=styles["Normal"], fontSize=20, leading=24,
+                                      fontName="Helvetica-Bold")
+
+    elements = []
+    elements.append(Paragraph("Maintenance History Report", title_style))
+    elements.append(Paragraph(f"Range: {range} &nbsp;|&nbsp; Generated: {generated_at}", subtitle_style))
+
+    kpi_table_data = [
+        [Paragraph("TOTAL EVENTS", kpi_label_style), Paragraph("CRITICAL FAILURES", kpi_label_style)],
+        [Paragraph(str(total_events), kpi_value_style), Paragraph(str(critical_count), kpi_value_style)],
+    ]
+    kpi_table = Table(kpi_table_data, colWidths=[6 * cm, 6 * cm])
+    kpi_table.setStyle(TableStyle([
+        ("BOX", (0, 0), (0, 1), 0.75, colors.HexColor("#dddddd")),
+        ("BOX", (1, 0), (1, 1), 0.75, colors.HexColor("#dddddd")),
+        ("LEFTPADDING", (0, 0), (-1, -1), 12),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    elements.append(kpi_table)
+    elements.append(Spacer(1, 18))
+
+    header = ["Date", "Time", "Equipment ID", "Event Type", "Severity", "Technician"]
+    data = [header]
+    severity_cell_indices = []
+
+    for i, e in enumerate(events, start=1):
+        data.append([
+            e.occurred_at.strftime("%b %d, %Y"),
+            e.occurred_at.strftime("%H:%M:%S UTC"),
+            e.equipment.equipment_id,
+            e.event_type,
+            e.severity.value,
+            e.technician.full_name if e.technician else "Automated",
+        ])
+        severity_cell_indices.append((i, e.severity))
+
+    events_table = Table(data, repeatRows=1, colWidths=[3.2*cm, 3.2*cm, 3.5*cm, 5*cm, 3*cm, 5*cm])
+
+    table_style = [
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f4f4f4")),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+        ("TOPPADDING", (0, 0), (-1, 0), 8),
+        ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#cccccc")),
+        ("LINEBELOW", (0, 1), (-1, -1), 0.5, colors.HexColor("#eeeeee")),
+        ("TOPPADDING", (0, 1), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 1), (-1, -1), 5),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ]
+
+    for row_idx, sev in severity_cell_indices:
+        color = SEVERITY_COLORS.get(sev)
+        if color:
+            table_style.append(("TEXTCOLOR", (4, row_idx), (4, row_idx), color))
+            table_style.append(("FONTNAME", (4, row_idx), (4, row_idx), "Helvetica-Bold"))
+
+    events_table.setStyle(TableStyle(table_style))
+    elements.append(events_table)
+
+    def add_page_number(canvas, doc_):
+        canvas.saveState()
+        canvas.setFont("Helvetica", 8)
+        canvas.setFillColor(colors.HexColor("#888888"))
+        canvas.drawRightString(landscape(A4)[0] - 1.5 * cm, 1 * cm, f"Page {doc_.page}")
+        canvas.restoreState()
+
+    doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
+    buffer.seek(0)
+
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=maintenance-history.pdf"},
     )
